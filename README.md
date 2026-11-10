@@ -77,8 +77,8 @@ An internal-only VM has no internet. Do any apt install work before switching to
 
 ## Step 8: Assign static IPs
 
-Server VM - 10.0.2.10
-Client VM - 10.0.2.20
+- Server VM - 10.0.2.10
+- Client VM - 10.0.2.20
 
 Edit netplan on each VM (sudo nano /etc/netplan/50-cloud-init.yaml or similar), using the interface name you saw in ip -br a. For server on labnet:
 
@@ -96,5 +96,14 @@ For client, use 10.0.2.20/24. Apply with sudo netplan apply, then confirm connec
 Cloned VMs inherit the port-forwarding rule, so while a clone is still on NAT, only one running VM can use host port 2222. Give each clone a different Host Port (for example 2223 for client and 2224 for server) under Adapter 1 → Advanced → Port Forwarding, then connect with ssh -p 2223 youruser@127.0.0.1.
 
 Once a clone moves to Internal Network, port forwarding no longer applies. To keep SSH access from Windows, add a Host-only Adapter as Adapter 2 and give it an address on the host-only subnet, as in the earlier steps.
+
+*When applying the new netplan with the static ip address, there's an error because of the existence of another netplan file.  To fix this, run the following commands*
+
+  sudo mkdir -p /root/netplan-backup
+  sudo mv /etc/netplan/00-installer-config.yaml /root/netplan-backup/   # use your actual filename
+  sudo netplan apply
+
+
+
 
 
