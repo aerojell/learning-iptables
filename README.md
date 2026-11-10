@@ -70,6 +70,8 @@ server	Internal netB
 
 Set each in Settings → Network → Adapter N → Enable → Attached to: Internal Network, then type or pick the name.
 
+*To make it easier to connect to the VMs from the Windows 11 host machine, enable Adapter 3 to "Host-Only Adapter" for each VM. We will set the static for the Host-Only LAN in the section below*
+
 Two things to know:
 
 Adapter order matters. Inside Ubuntu the interfaces will appear in order (commonly enp0s3, enp0s8, enp0s9). Confirm with ip -br a before editing netplan.
@@ -77,19 +79,38 @@ An internal-only VM has no internet. Do any apt install work before switching to
 
 ## Step 8: Assign static IPs
 
+LabNet LAN
 - Server VM - 10.0.2.10
 - Client VM - 10.0.2.20
 
+Host-Only LAN
+- Server VM - 192.168.56.10
+- Client VM - 192.168.56.20
+
 Edit netplan on each VM (sudo nano /etc/netplan/50-cloud-init.yaml or similar), using the interface name you saw in ip -br a. For server on labnet:
 
+
+***Server LAN
 yaml
 network:
   version: 2
   ethernets:
     enp0s3:
       addresses: [10.0.2.10/24]
+    enp0s9:
+      addresses: [192.168.56.10/24]
 
-For client, use 10.0.2.20/24. Apply with sudo netplan apply, then confirm connectivity with ping 10.0.2.10 from the client.
+***Client LAN
+yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      addresses: [10.0.2.20/24]
+    enp0s9:
+      addresses: [192.168.56.20/24]
+
+Apply with sudo netplan apply, then confirm connectivity with ping 10.0.2.10 from the client.
 
 *To connect the different VMs, follow the directions below (similar to the steps above)*
 
