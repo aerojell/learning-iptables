@@ -82,6 +82,8 @@ Nmap done: 1 IP address (1 host up) scanned in 0.87 seconds
 
 ## Exercise 2: tcpdump
 
+Capture a full TCP handshake and a connection teardown with tcpdump.
+
 Server
 
 ```
@@ -120,4 +122,29 @@ ETag: "6af2342c-267"
 Accept-Ranges: bytes
 ```
 
+## Exercise 3:
+
+List the current rules with iptables -L -v -n and nft list ruleset, and read what’s already there.
+
+### Step 1: See which iptables you have
+
+```
+user1@server:~$ iptables --version
+iptables v1.8.11 (nf_tables)
+```
+
+### Step 2: List the rules with iptables
+
+```
+user1@server:~$ sudo iptables -L -v -n
+[sudo: authenticate] Password:         
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+```
 
