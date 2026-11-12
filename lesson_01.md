@@ -82,3 +82,42 @@ Nmap done: 1 IP address (1 host up) scanned in 0.87 seconds
 
 ## Exercise 2: tcpdump
 
+Server
+
+```
+user1@server:~$ sudo tcpdump -ni enp0s3 port 80
+[sudo: authenticate] Password:         
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+16:29:38.539471 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [S], seq 3534882120, win 64240, options [mss 1460,sackOK,TS val 3220893198 ecr 0,nop,wscale 8], length 0
+16:29:38.539511 IP 10.0.2.10.80 > 10.0.2.20.49226: Flags [S.], seq 2181120779, ack 3534882121, win 65160, options [mss 1460,sackOK,TS val 3445215309 ecr 3220893198,nop,wscale 8], length 0
+16:29:38.540851 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [.], ack 1, win 251, options [nop,nop,TS val 3220893200 ecr 3445215309], length 0
+16:29:38.540851 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [P.], seq 1:75, ack 1, win 251, options [nop,nop,TS val 3220893200 ecr 3445215309], length 74: HTTP: HEAD / HTTP/1.1
+16:29:38.540988 IP 10.0.2.10.80 > 10.0.2.20.49226: Flags [.], ack 75, win 255, options [nop,nop,TS val 3445215310 ecr 3220893200], length 0
+16:29:38.544708 IP 10.0.2.10.80 > 10.0.2.20.49226: Flags [P.], seq 1:248, ack 75, win 255, options [nop,nop,TS val 3445215314 ecr 3220893200], length 247: HTTP: HTTP/1.1 200 OK
+16:29:38.546497 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [.], ack 248, win 251, options [nop,nop,TS val 3220893205 ecr 3445215314], length 0
+16:29:38.547519 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [F.], seq 75, ack 248, win 251, options [nop,nop,TS val 3220893206 ecr 3445215314], length 0
+16:29:38.547945 IP 10.0.2.10.80 > 10.0.2.20.49226: Flags [F.], seq 248, ack 76, win 255, options [nop,nop,TS val 3445215317 ecr 3220893206], length 0
+16:29:38.553577 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [.], ack 249, win 251, options [nop,nop,TS val 3220893212 ecr 3445215317], length 0
+
+10 packets captured
+10 packets received by filter
+0 packets dropped by kernel
+```
+
+Client
+
+```
+user1@client:~$ curl -I http://10.0.2.10
+HTTP/1.1 200 OK
+Server: nginx/1.28.3 (Ubuntu)
+Date: Thu, 12 Nov 2026 16:29:38 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
+Connection: keep-alive
+ETag: "6af2342c-267"
+Accept-Ranges: bytes
+```
+
+
