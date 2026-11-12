@@ -84,12 +84,32 @@ Nmap done: 1 IP address (1 host up) scanned in 0.87 seconds
 
 Capture a full TCP handshake and a connection teardown with tcpdump.
 
-Server
+### Step 1: Start the capture on server
 
 ```
 user1@server:~$ sudo tcpdump -ni enp0s3 port 80
 [sudo: authenticate] Password:         
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+```
+
+### Step 2: Generate a connection from client
+
+```
+user1@client:~$ curl -I http://10.0.2.10
+HTTP/1.1 200 OK
+Server: nginx/1.28.3 (Ubuntu)
+Date: Thu, 12 Nov 2026 16:29:38 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
+Connection: keep-alive
+ETag: "6af2342c-267"
+Accept-Ranges: bytes
+```
+
+### Step 3: Read the output
+
+```
 listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 16:29:38.539471 IP 10.0.2.20.49226 > 10.0.2.10.80: Flags [S], seq 3534882120, win 64240, options [mss 1460,sackOK,TS val 3220893198 ecr 0,nop,wscale 8], length 0
 16:29:38.539511 IP 10.0.2.10.80 > 10.0.2.20.49226: Flags [S.], seq 2181120779, ack 3534882121, win 65160, options [mss 1460,sackOK,TS val 3445215309 ecr 3220893198,nop,wscale 8], length 0
@@ -109,18 +129,7 @@ listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 
 Client
 
-```
-user1@client:~$ curl -I http://10.0.2.10
-HTTP/1.1 200 OK
-Server: nginx/1.28.3 (Ubuntu)
-Date: Thu, 12 Nov 2026 16:29:38 GMT
-Content-Type: text/html
-Content-Length: 615
-Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
-Connection: keep-alive
-ETag: "6af2342c-267"
-Accept-Ranges: bytes
-```
+
 
 ## Exercise 3:
 
