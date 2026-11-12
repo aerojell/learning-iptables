@@ -32,7 +32,7 @@ LISTEN   0         511                   [::]:80                  [::]:*       u
 LISTEN   0         4096                  [::]:22                  [::]:*       users:(("sshd",pid=1053,fd=4),("systemd",pid=1,fd=109))
 ```
 
-### Client Output
+### Scan 1: the default scan
 
 ```
 user1@client:~$ nmap 10.0.2.10
@@ -44,6 +44,7 @@ PORT   STATE SERVICE
 22/tcp open  ssh
 80/tcp open  http
 ```
+### Scan 2: every port
 
 ```
 user1@client:~$ sudo nmap -sS -p- 10.0.2.10
@@ -79,6 +80,28 @@ MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
 
 Nmap done: 1 IP address (1 host up) scanned in 0.87 seconds
 ```
+
+### Scan 3: identify the services
+
+```
+user1@client:~$ sudo nmap -sV -p 22,80,45678 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-12 20:31 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0030s latency).
+
+PORT      STATE  SERVICE VERSION
+22/tcp    open   ssh     OpenSSH 10.2p1 Ubuntu 2ubuntu3.8 (Ubuntu Linux; protocol 2.0)
+80/tcp    open   http    nginx 1.28.3 (Ubuntu)
+45678/tcp closed eba
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 7.43 seconds
+```
+
+
+
 
 ## Exercise 2: tcpdump
 
@@ -126,10 +149,6 @@ listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 10 packets received by filter
 0 packets dropped by kernel
 ```
-
-Client
-
-
 
 ## Exercise 3:
 
