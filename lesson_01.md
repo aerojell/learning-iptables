@@ -100,8 +100,62 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 7.43 seconds
 ```
 
+### Scan 4: finds which hosts are up on the subnet without scanning ports (a ping sweep).
 
+```
+user1@client:~$ sudo nmap -sn 10.0.2.0/24
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-12 20:33 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0033s latency).
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+Nmap scan report for client.local (10.0.2.20)
+Host is up.
+Nmap done: 256 IP addresses (2 hosts up) scanned in 2.67 seconds
+```
 
+### Scan 5: skips host discovery and scans anyway. You’ll need this later if a firewall blocks ping, because nmap otherwise concludes “host seems down.”
+
+```
+user1@client:~$ sudo nmap -Pn 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-12 20:35 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0018s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 1.13 seconds
+```
+
+### Scan 6: adds more detail while it runs
+
+```
+user1@client:~$ sudo nmap -v 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-12 20:36 +0000
+Initiating ARP Ping Scan at 20:36
+Scanning 10.0.2.10 [1 port]
+Completed ARP Ping Scan at 20:36, 0.21s elapsed (1 total hosts)
+Initiating Parallel DNS resolution of 1 host. at 20:36
+Completed Parallel DNS resolution of 1 host. at 20:36, 0.50s elapsed
+Initiating SYN Stealth Scan at 20:36
+Scanning 10.0.2.10 [1000 ports]
+Discovered open port 22/tcp on 10.0.2.10
+Discovered open port 80/tcp on 10.0.2.10
+Completed SYN Stealth Scan at 20:36, 0.37s elapsed (1000 total ports)
+Nmap scan report for 10.0.2.10
+Host is up (0.0037s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 1.22 seconds
+           Raw packets sent: 1001 (44.028KB) | Rcvd: 1001 (40.036KB)
+```
 
 ## Exercise 2: tcpdump
 
