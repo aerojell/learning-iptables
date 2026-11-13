@@ -161,5 +161,4 @@ For each VM:
 - For Username, enter the username you selected
 - For Authentication Method, select **Password**. There's an option to save password under **Set Password**
 - Select **Save** at the bottom of the window
-- 
 
