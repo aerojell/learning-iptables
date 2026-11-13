@@ -106,3 +106,51 @@ table ip filter {
 
 ```
 
+Flush firewall rule after this excercise
+
+```
+user1@server:~$ sudo iptables -F
+
+user1@server:~$ sudo iptables -L -v -n
+Chain INPUT (policy ACCEPT 2325 packets, 2186K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+        }
+}
+```
+
+## Exercise 2: DROP vs REJECT
+
+```
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+
+user1@server:~$ sudo iptables -L -v -n
+Chain INPUT (policy ACCEPT 2396 packets, 2192K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 reject-with tcp-reset
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+user1@server:~$ sudo nft list ruleset
+# Warning: table ip filter is managed by iptables-nft, do not touch!
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                tcp dport 80 counter packets 0 bytes 0 reject with tcp reset
+        }
+}
+```
