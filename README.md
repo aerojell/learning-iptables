@@ -91,6 +91,7 @@ Edit netplan on each VM (sudo nano /etc/netplan/50-cloud-init.yaml or similar), 
 
 
 ***Server LAN
+```
 yaml
 network:
   version: 2
@@ -99,8 +100,11 @@ network:
       addresses: [10.0.2.10/24]
     enp0s9:
       addresses: [192.168.56.10/24]
+```
 
 ***Client LAN
+
+```
 yaml
 network:
   version: 2
@@ -109,6 +113,7 @@ network:
       addresses: [10.0.2.20/24]
     enp0s9:
       addresses: [192.168.56.20/24]
+```
 
 Apply with sudo netplan apply, then confirm connectivity with ping 10.0.2.10 from the client.
 
@@ -120,10 +125,11 @@ Once a clone moves to Internal Network, port forwarding no longer applies. To ke
 
 *When applying the new netplan with the static ip address, there's an error because of the existence of another netplan file.  To fix this, run the following commands*
 
+```
   sudo mkdir -p /root/netplan-backup
   sudo mv /etc/netplan/00-installer-config.yaml /root/netplan-backup/   # use your actual filename
   sudo netplan apply
-
+```
 
 
 
