@@ -24,51 +24,82 @@ Here’s the full setup for VirtualBox on Windows 11. The key idea is to build o
 Get the Ubuntu Server 24.04 LTS (or 22.04 LTS) ISO from ubuntu.com/download/server. The Server edition has no desktop and uses far fewer resources, which suits this lab.
 
 ## Step 4: Create the base VM
-In VirtualBox, click New.
-Name it ubuntu-base, select your ISO, and check Skip Unattended Installation so you control the install.
-Set 1024 to 2048 MB of RAM and 1 to 2 CPUs.
-Create a 10 GB virtual disk (dynamically allocated).
-Before starting, open Settings → Network. Leave Adapter 1 as NAT for now so the VM can reach the internet during install.
-Start the VM and walk through the Ubuntu installer. Accept the defaults, create a user and password, and check Install OpenSSH server when offered. Skip the optional snaps.
-When it finishes, remove the ISO if prompted and reboot.
+
+- In VirtualBox, click **New**.
+
+- Name it ubuntu-base, select your ISO, and check **Skip Unattended Installation** so you control the install.
+
+- Set **1024 to 2048 MB** of RAM and **1 to 2 CPUs**.
+  
+- Create a **10 GB** virtual disk (dynamically allocated).
+  
+- Before starting, open **Settings → Network**. Leave Adapter 1 as **NAT** for now so the VM can reach the internet during install.
+*Complete the above step after creating the VM but before starting it up*
+
+- Start the VM and walk through the Ubuntu installer. Accept the defaults, create a user and password, and check **Install OpenSSH** server when offered. Skip the optional snaps.
+
+- When it finishes, remove the ISO if prompted and reboot.
 
 ## Step 5: Install your tools
 
-Log in at the VM console and run:
+- Log in at the VM console and run:
 
-bash
+```
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y nftables iptables ufw tcpdump nmap netcat-openbsd curl conntrack nginx
+```
+*Another option to cut and paste the commands above is to do SSH to the VM via port forwarding.  See instructions below*
 
-Shut down with sudo poweroff, then take a snapshot: Machine Tools → Snapshots → Take, named base-tools.
+>SSH lets you use Windows Terminal or PowerShell, where copy and paste work normally. It also gives you scrollback and a better terminal than the VM console.
+>
+>**While Adapter 1 is NAT (during setup and base-VM work):**
+>
+>- In VirtualBox, open the VM’s **Settings → Network → Adapter 1 → Advanced → Port Forwarding**.
+>- Add a rule: Protocol **TCP**, Host IP **127.0.0.1**, Host Port **2222**, Guest IP blank, Guest Port **22**.
+>- Make sure OpenSSH server is installed in the VM (sudo apt install openssh-server), then from Windows run:
+>
+>```
+>ssh -p 2222 youruser@127.0.0.1
+>```
+>
+>**Once your VMs move to Internal Network**: port forwarding no longer applies, so add a second (or third) adapter set to **Host-Only Adapter** (Settings → Network → Adapter 2). >Give it an address in the host-only subnet (usually 192.168.56.0/24) and SSH to that address instead
+
+
+- Shut down with sudo poweroff, then take a snapshot: Machine Tools → Snapshots → Take, named base-tools.
 
 ## Step 6: Clone into lab VMs
-Right-click ubuntu-base → Clone.
-Name it client. Set MAC Address Policy to “Generate new MAC addresses for all network adapters.” Choose Full clone.
-Repeat for server, and later for gateway (when you reach Lesson 5).
-Step 7: Configure the lab networks
+
+- Right-click ubuntu-base → **Clone**.
+
+- Name it **client**. Set MAC Address Policy to **Generate new MAC addresses for all network adapters**. Choose **Full clone**.
+  
+- Repeat for server, and later for gateway (when you reach Lesson 5).
+
+## Step 7: Configure the lab networks
 
 Use VirtualBox Internal Network adapters, which are isolated from your host and home network. For Lessons 1 to 4, you only need client and server on the same segment:
 
-VM	Adapter 1	Adapter 2
-client	Internal Network labnet	optional: NAT (for updates)
-server	Internal Network labnet	optional: NAT (for updates)
+| VM | Adapter 1 | Adapter 2 | Adapter 3 |
+|----|-----------|-----------|-----------|
+| client | Internal Network labnet | optional: NAT (for updates) | Host-Only Adapter (for SSH access) |
+| server | Internal Network labnet | optional: NAT (for updates) | Host-Only Adapter (for SSH access) |
 
 For Lessons 5 and 7, rename the segments to two networks:
 
-VM	Adapter 1	Adapter 2	Adapter 3
-client	Internal netA		
-gateway	Internal netA	Internal netB	NAT
-server	Internal netB		
+| VM | Adapter 1 | Adapter 2 | Adapter 3 | Adapter 4 |
+|----|-----------|-----------|-----------|-----------|
+| client | Internal netA | | Host-Only Adapter (for SSH access) | |		
+| gateway | Internal netA	| Internal netB	| Host-Only Adapter (for SSH access) | NAT | 
+| server | Internal netB | | Host-Only Adapter (for SSH access) | |		
 
-Set each in Settings → Network → Adapter N → Enable → Attached to: Internal Network, then type or pick the name.
+Set each in **Settings → Network → Adapter N → Enable → Attached to: Internal Network**, then type or pick the name.
 
 *To make it easier to connect to the VMs from the Windows 11 host machine, enable Adapter 3 to "Host-Only Adapter" for each VM. We will set the static for the Host-Only LAN in the section below*
 
 Two things to know:
 
-Adapter order matters. Inside Ubuntu the interfaces will appear in order (commonly enp0s3, enp0s8, enp0s9). Confirm with ip -br a before editing netplan.
-An internal-only VM has no internet. Do any apt install work before switching to Internal Network, or keep a second NAT adapter for updates (just remember it adds a default route that can confuse your routing tests in Lesson 5).
+- **Adapter order matters**. Inside Ubuntu the interfaces will appear in order (commonly enp0s3, enp0s8, enp0s9). Confirm with ip -br a before editing netplan.
+- **An internal-only VM has no internet**. Do any apt install work before switching to Internal Network, or keep a second NAT adapter for updates (just remember it adds a default route that can confuse your routing tests in Lesson 5).
 
 ## Step 8: Assign static IPs
 
@@ -83,7 +114,7 @@ Host-Only LAN
 Edit netplan on each VM (sudo nano /etc/netplan/50-cloud-init.yaml or similar), using the interface name you saw in ip -br a. For server on labnet:
 
 
-***Server LAN
+### Server VM
 ```
 yaml
 network:
@@ -95,7 +126,7 @@ network:
       addresses: [192.168.56.10/24]
 ```
 
-***Client LAN
+### Client VM
 
 ```
 yaml
