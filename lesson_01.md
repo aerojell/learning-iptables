@@ -266,3 +266,32 @@ table ip filter {
 }
 ```
 
+Ran curl on the client VM to see the counters go up
+
+```
+user1@client:~$ curl -I http://10.0.2.10
+HTTP/1.1 200 OK
+Server: nginx/1.28.3 (Ubuntu)
+Date: Thu, 12 Nov 2026 21:42:20 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
+Connection: keep-alive
+ETag: "6af2342c-267"
+Accept-Ranges: bytes
+```
+
+```
+user1@server:~$ sudo iptables -L INPUT -v -n
+Chain INPUT (policy ACCEPT 1069 packets, 93143 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    6   394 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                tcp dport 80 counter packets 6 bytes 394 accept
+        }
+}
+```
