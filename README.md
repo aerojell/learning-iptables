@@ -13,7 +13,7 @@ Here are the Claude prompts I started with:
 
 ## Software
 - [VirtualBox](https://www.virtualbox.org/)
-- [Tabby](https://tabby.sh/) - Cross Platform Open Source Terminal Client (SSH, Powershell, etc)
+- [Tabby](https://tabby.sh/) - Open source cross platform terminal client (SSH, Powershell, etc)
 
 ## Sections
   - [Virtual Box Setup](virtualbox-setup.md)
