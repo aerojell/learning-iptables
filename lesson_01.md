@@ -313,3 +313,9 @@ Chain INPUT (policy ACCEPT 2698 packets, 237K bytes)
  pkts bytes target     prot opt in     out     source               destination
 ```
 
+### Step 5: Check for other firewall tools
+
+```
+user1@server:~$ sudo ufw status
+Status: inactive
+```
