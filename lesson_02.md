@@ -80,4 +80,29 @@ MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
 Nmap done: 1 IP address (1 host up) scanned in 2.73 seconds
 ```
 
+Server VM
+```
+user1@server:~$ sudo iptables -L -v -n
+[sudo: authenticate] Password:                                            
+Chain INPUT (policy ACCEPT 1745 packets, 2131K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    7   388 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                tcp dport 80 counter packets 7 bytes 388 drop
+        }
+}
+
+```
 
