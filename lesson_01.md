@@ -230,3 +230,14 @@ Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination
 ```
 
+### Step 3: List the rules with nft
+
+```
+user1@server:~$ sudo nft list ruleset
+[sudo: authenticate] Password:       
+
+
+```
+*It lists nothing since there are no firewall rules*
+
+### Step 4: 
