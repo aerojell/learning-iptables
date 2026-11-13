@@ -150,5 +150,16 @@ Apply with sudo netplan apply, then confirm connectivity with ping 10.0.2.10 fro
   sudo netplan apply
 ```
 
+### Step 9: Create SSH profiles on Tabby
 
+For each VM:
+- On the **Tabby** application, go to **Settings**
+- Select **Profiles & connections** from the left column
+- Select **+ New -> New Profile -> SSH connection**
+- For Name, enter either "server" or "client"
+- For Host, enter the respective IP address - 192.168.58.10 for server or 192.168.58.20 for client
+- For Username, enter the username you selected
+- For Authentication Method, select **Password**. There's an option to save password under **Set Password**
+- Select **Save** at the bottom of the window
+- 
 
