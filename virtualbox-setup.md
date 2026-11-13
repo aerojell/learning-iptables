@@ -3,15 +3,21 @@
 Here’s the full setup for VirtualBox on Windows 11. The key idea is to build one VM with internet access, install your tools, snapshot it, then clone it and rewire the network for each lab role.
 
 ## Step 1: Check prerequisites
-Hardware virtualization must be on. Open Task Manager → Performance → CPU and look for “Virtualization: Enabled.” If it says Disabled, reboot into your BIOS/UEFI and enable Intel VT-x or AMD-V (sometimes labeled SVM Mode).
-Disk space: plan for about 40 GB free (three VMs at roughly 10 GB each, plus the ISO and snapshots).
-RAM: each VM needs about 1 GB, so 8 GB of host RAM is workable and 16 GB is comfortable.
-Hyper-V and WSL2 conflicts: Windows 11 often has Hyper-V features enabled (WSL2, Docker Desktop, and Memory Integrity can all turn them on). Current VirtualBox versions can run alongside Hyper-V, but VMs may run noticeably slower. If performance is poor, you can disable “Virtual Machine Platform” and “Windows Hypervisor Platform” under Turn Windows features on or off and reboot, but that will break WSL2 until you re-enable them.
+
+- **Hardware virtualization must be on**. Open Task Manager → Performance → CPU and look for “Virtualization: Enabled.” If it says Disabled, reboot into your BIOS/UEFI and enable Intel VT-x or AMD-V (sometimes labeled SVM Mode).
+
+- **Disk space:** plan for about 40 GB free (three VMs at roughly 10 GB each, plus the ISO and snapshots).
+
+- **RAM:** each VM needs about 1 GB, so 8 GB of host RAM is workable and 16 GB is comfortable.
+  
+- **Hyper-V and WSL2 conflicts:** Windows 11 often has Hyper-V features enabled (WSL2, Docker Desktop, and Memory Integrity can all turn them on). Current VirtualBox versions can run alongside Hyper-V, but VMs may run noticeably slower. If performance is poor, you can disable “Virtual Machine Platform” and “Windows Hypervisor Platform” under Turn Windows features on or off and reboot, but that will break WSL2 until you re-enable them.
 
 ## Step 2: Install VirtualBox
-Download the Windows installer from virtualbox.org (Downloads → “Windows hosts”).
-Run it as administrator and accept the defaults. The installer will briefly disconnect your network adapters while it installs the networking drivers, which is normal.
-Optionally, download the Extension Pack from the same page. You don’t need it for this lab.
+- Download the Windows installer from virtualbox.org (Downloads → “Windows hosts”).
+
+- Run it as administrator and accept the defaults. The installer will briefly disconnect your network adapters while it installs the networking drivers, which is normal.
+
+- Optionally, download the Extension Pack from the same page. You don’t need it for this lab.
 
 ## Step 3: Download Ubuntu Server
 
