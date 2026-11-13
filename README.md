@@ -1,5 +1,5 @@
 # learning-iptables
-Learning iptables with Claude
+Learning iptables using Claude
 
 ## Intro
 
