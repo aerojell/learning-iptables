@@ -295,3 +295,21 @@ table ip filter {
         }
 }
 ```
+
+Flush firewall rules
+
+```
+user1@server:~$ sudo iptables -F
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+        }
+}
+
+user1@server:~$ sudo iptables -L INPUT -v -n
+Chain INPUT (policy ACCEPT 2698 packets, 237K bytes)
+ pkts bytes target     prot opt in     out     source               destination
+```
+
