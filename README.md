@@ -1,17 +1,17 @@
 # learning-iptables
 Learning iptables with Claude
 
-# Intro
+## Intro
 
 Here are the Claude prompts I started with:
 
-  I'm a software developer but would like to learn more about firewall rules using hands on exercises. Can you create a lesson plan to accomplish this?
+  >I'm a software developer but would like to learn more about firewall rules using hands on exercises. Can you create a lesson plan to accomplish this?
 
-  i'd like to use VMs and my preferred OS is ubuntu
+  >i'd like to use VMs and my preferred OS is ubuntu
   
-  my host OS is windows 11.  can you provide instructions on how i setup virtual box?
+  >my host OS is windows 11.  can you provide instructions on how i setup virtual box?
 
-Sections:
+## Sections:
   - [Virtual Box Setup](virtualbox-setup.md)
   - [Lesson 1](lesson_01.md)
   - [Lesson 2](lesson_02.md)
