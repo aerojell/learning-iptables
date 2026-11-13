@@ -11,6 +11,10 @@ Here are the Claude prompts I started with:
   
   >my host OS is windows 11.  can you provide instructions on how i setup virtual box?
 
+## Software
+- [VirtualBox](https://www.virtualbox.org/)
+- [Tabby](https://tabby.sh/) - Cross Platform Open Source Terminal Client (SSH, Powershell, etc)
+
 ## Sections
   - [Virtual Box Setup](virtualbox-setup.md)
   - [Lesson 1](lesson_01.md)
