@@ -240,4 +240,29 @@ user1@server:~$ sudo nft list ruleset
 ```
 *It lists nothing since there are no firewall rules*
 
-### Step 4: 
+### Step 4: Watch iptables and nft show the same thing
+
+Add some firewall rules
+
+```
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+```
+
+```
+user1@server:~$ sudo iptables -L INPUT -v -n
+Chain INPUT (policy ACCEPT 363 packets, 27632 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+```
+
+```
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                tcp dport 80 counter packets 0 bytes 0 accept
+        }
+}
+```
+
