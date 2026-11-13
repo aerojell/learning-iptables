@@ -11,7 +11,7 @@ Here are the Claude prompts I started with:
   
   >my host OS is windows 11.  can you provide instructions on how i setup virtual box?
 
-## Sections:
+## Sections
   - [Virtual Box Setup](virtualbox-setup.md)
   - [Lesson 1](lesson_01.md)
   - [Lesson 2](lesson_02.md)
