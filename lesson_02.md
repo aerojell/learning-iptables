@@ -131,6 +131,8 @@ table ip filter {
 
 ## Exercise 2: DROP vs REJECT
 
+Server VM
+
 ```
 user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j REJECT --reject-with tcp-reset
 
@@ -145,7 +147,8 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination         
 
-user1@server:~$ sudo nft list ruleset
+user1@server
+:~$ sudo nft list ruleset
 # Warning: table ip filter is managed by iptables-nft, do not touch!
 table ip filter {
         chain INPUT {
@@ -153,4 +156,27 @@ table ip filter {
                 tcp dport 80 counter packets 0 bytes 0 reject with tcp reset
         }
 }
+```
+
+Client VM
+
+```
+user1@client:~$ time curl -m 10 -I http://10.0.2.10
+curl: (7) Failed to connect to 10.0.2.10 port 80 after 4 ms: Could not connect to server
+
+real    0m0.200s
+user    0m0.023s
+sys     0m0.096s
+
+
+user1@client:~$ sudo nmap -sS -p 80 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-16 18:47 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0036s latency).
+
+PORT   STATE  SERVICE
+80/tcp closed http
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 1.36 seconds
 ```
