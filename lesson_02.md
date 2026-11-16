@@ -131,6 +131,8 @@ table ip filter {
 
 ## Exercise 2: DROP vs REJECT
 
+### Part A: REJECT with a TCP reset
+
 Server VM
 
 ```
@@ -179,4 +181,74 @@ PORT   STATE  SERVICE
 MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
 
 Nmap done: 1 IP address (1 host up) scanned in 1.36 seconds
+```
+
+### Part B: Watch the packets
+
+Server VM
+
+```
+user1@server:~$ sudo tcpdump -ni enp0s3 port 80
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+18:56:30.765066 IP 10.0.2.20.50892 > 10.0.2.10.80: Flags [S], seq 1816930442, win 64240, options [mss 1460,sackOK,TS val 1543390701 ecr 0,nop,wscale 8], length 0
+18:56:30.765108 IP 10.0.2.10.80 > 10.0.2.20.50892: Flags [R.], seq 0, ack 1816930443, win 0, length 0
+
+```
+
+### Part C: Compare with DROP
+
+Server VM
+
+```
+user1@server:~$ sudo iptables -F
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+        }
+}
+
+user1@server:~$ sudo iptables -L -v -n
+Chain INPUT (policy ACCEPT 2536 packets, 2197K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+
+```
+
+Client VM
+
+```
+user1@client:~$ time curl -m 10 -I http://10.0.2.10
+curl: (28) Connection timed out after 12066 milliseconds
+
+real    0m12.135s
+user    0m0.041s
+sys     0m0.014s
+```
+
+Server VM
+
+```
+user1@server:~$ sudo tcpdump -ni enp0s3 port 80
+[sudo: authenticate] Password:                                            
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+19:36:00.161620 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836444951 ecr 0,nop,wscale 8], length 0
+19:36:01.279874 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836446069 ecr 0,nop,wscale 8], length 0
+19:36:03.810679 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836448600 ecr 0,nop,wscale 8], length 0
+19:36:08.600855 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836453390 ecr 0,nop,wscale 8], length 0
+19:36:09.661759 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836454451 ecr 0,nop,wscale 8], length 0
+19:36:12.260548 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836457050 ecr 0,nop,wscale 8], length 0
+19:36:15.908263 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836460697 ecr 0,nop,wscale 8], length 0
+19:36:22.155775 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836466945 ecr 0,nop,wscale 8], length 0
 ```
