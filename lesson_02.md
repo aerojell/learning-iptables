@@ -375,6 +375,10 @@ table ip filter {
                 type filter hook input priority filter; policy accept;
         }
 }
+
+# start nc listener
+user1@server:~$ nc -l -k 45678 &
+[1] 1766
 ```
 
 ### Step 1: Add ALLOW rules first
@@ -415,4 +419,108 @@ table ip filter {
                 ip protocol icmp icmp type echo-request counter packets 0 bytes 0 accept
         }
 }
+```
+
+## Step 2: Flip policy to DROP
+
+Server VM
+
+```
+user1@server:~$ sudo iptables -P INPUT DROP
+
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+2      779 52072 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+3        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+```
+
+Client VM
+
+```
+# check ping
+user1@client:~$ ping -c 3 10.0.2.10
+PING 10.0.2.10 (10.0.2.10) 56(84) bytes of data.
+64 bytes from 10.0.2.10: icmp_seq=1 ttl=64 time=3.70 ms
+64 bytes from 10.0.2.10: icmp_seq=2 ttl=64 time=3.85 ms
+64 bytes from 10.0.2.10: icmp_seq=3 ttl=64 time=5.59 ms
+
+--- 10.0.2.10 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2442ms
+rtt min/avg/max/mdev = 3.699/4.377/5.588/0.857 ms
+
+# check ssh
+user1@client:~$ ssh user1@10.0.2.10
+The authenticity of host '10.0.2.10 (10.0.2.10)' can't be established.
+ED25519 key fingerprint is: SHA256:FHIl/ZqoFQwtRaVdTpdCXGMlzwgCKRODHvYUlxEEI5w
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.2.10' (ED25519) to the list of known hosts.
+user1@10.0.2.10's password: 
+Welcome to Ubuntu 26.04.1 LTS (GNU/Linux 7.0.0-43-generic x86_64)
+
+# check http
+user1@client:~$ curl -m 5 -I http://10.0.2.10
+curl: (28) Connection timed out after 5009 milliseconds
+
+# run nmap
+user1@client:~$ sudo nmap -sS -p- 10.0.2.10
+[sudo: authenticate] Password:                                            
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-17 15:38 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0010s latency).
+Not shown: 65534 filtered tcp ports (no-response)
+PORT   STATE SERVICE
+22/tcp open  ssh
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 116.19 seconds
+
+```
+
+Server VM
+
+```
+# ping can't get make it out of the server
+user1@server:~$ ping -c 3 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+
+--- 8.8.8.8 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2152ms
+
+# apt updates don't work either
+user1@server:~$ sudo apt update
+Ign:1 http://security.ubuntu.com/ubuntu resolute-security InRelease         
+Ign:2 http://us.archive.ubuntu.com/ubuntu resolute InRelease                
+Ign:1 http://security.ubuntu.com/ubuntu resolute-security InRelease         
+Ign:3 http://us.archive.ubuntu.com/ubuntu resolute-updates InRelease        
+Ign:4 http://us.archive.ubuntu.com/ubuntu resolute-backports InRelease      
+Ign:1 http://security.ubuntu.com/ubuntu resolute-security InRelease         
+Err:1 http://security.ubuntu.com/ubuntu resolute-security InRelease         
+  Temporary failure resolving 'security.ubuntu.com'
+Ign:2 http://us.archive.ubuntu.com/ubuntu resolute InRelease                
+Ign:3 http://us.archive.ubuntu.com/ubuntu resolute-updates InRelease
+Ign:4 http://us.archive.ubuntu.com/ubuntu resolute-backports InRelease
+Ign:2 http://us.archive.ubuntu.com/ubuntu resolute InRelease
+Ign:3 http://us.archive.ubuntu.com/ubuntu resolute-updates InRelease
+Ign:4 http://us.archive.ubuntu.com/ubuntu resolute-backports InRelease
+Err:2 http://us.archive.ubuntu.com/ubuntu resolute InRelease
+  Temporary failure resolving 'us.archive.ubuntu.com'
+Err:3 http://us.archive.ubuntu.com/ubuntu resolute-updates InRelease
+  Temporary failure resolving 'us.archive.ubuntu.com'
+Err:4 http://us.archive.ubuntu.com/ubuntu resolute-backports InRelease
+  Temporary failure resolving 'us.archive.ubuntu.com'
+All packages are up to date.            
+Warning: Failed to fetch http://us.archive.ubuntu.com/ubuntu/dists/resolute/InRelease  Temporary failure resolving 'us.archive.ubuntu.com'
+Warning: Failed to fetch http://us.archive.ubuntu.com/ubuntu/dists/resolute-updates/InRelease  Temporary failure resolving 'us.archive.ubuntu.com'
+Warning: Failed to fetch http://us.archive.ubuntu.com/ubuntu/dists/resolute-backports/InRelease  Temporary failure resolving 'us.archive.ubuntu.com'
+Warning: Failed to fetch http://security.ubuntu.com/ubuntu/dists/resolute-security/InRelease  Temporary failure resolving 'security.ubuntu.com'
+Warning: Some index files failed to download. They have been ignored, or old ones used instead.
 ```
