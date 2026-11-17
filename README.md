@@ -17,11 +17,11 @@ Here are the Claude prompts I started with:
 
 ## Sections
   - [Virtual Box Setup](virtualbox-setup.md) - Setting up VirtualBox and VMs (server, client, gateway)
-  - [Lesson 1: Mental model and observation](lesson_01.md) - Packets, ports, the TCP handshake, and chains/hooks
-  - [Lesson 2: Basic allow and deny rules](lesson_02.md) - Rule order, default policy, DROP vs. REJECT
-  - [Lesson 3: Stateful filtering](lesson_03.md) - Connection tracking and allowing replies
-  - Lesson 4: Modern tooling with nftable - Tables, chains, sets, and persistent rulesets
-  - Lesson 5: NAT and routing - The gateway VM, masquerading, and port forwarding
-  - Lesson 6: Logging, debugging, and troubleshooting - Log rules, packet tracing, and a debugging drill
-  - Capstone: Capstone project - A three-tier lab with least-privilege rules, plus automated tests
+  - [Lesson 1: Mental Model and Observation](lesson_01.md) - Packets, ports, the TCP handshake, and chains/hooks
+  - [Lesson 2: Basic allow and deny Rules](lesson_02.md) - Rule order, default policy, DROP vs. REJECT
+  - [Lesson 3: Stateful Filtering](lesson_03.md) - Connection tracking and allowing replies
+  - Lesson 4: Modern Tooling with nftable - Tables, chains, sets, and persistent rulesets
+  - Lesson 5: NAT and Routing - The gateway VM, masquerading, and port forwarding
+  - Lesson 6: Logging, Debugging, and Troubleshooting - Log rules, packet tracing, and a debugging drill
+  - Capstone: Capstone Project - A three-tier lab with least-privilege rules, plus automated tests
 
