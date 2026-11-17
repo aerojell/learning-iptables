@@ -162,3 +162,9 @@ For each VM:
 - For Authentication Method, select **Password**. There's an option to save password under **Set Password**
 - Select **Save** at the bottom of the window
 
+### Step 10: Disabled 'Adapter 2' on server and client VMs
+
+For the "server" and "client" VMs:
+- Go to **Settings -> Network -> Adapter 2"
+- Unselect "Virtual Cable Connected"
+- Click on "Save"
