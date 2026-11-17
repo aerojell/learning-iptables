@@ -201,3 +201,53 @@ user1@server:~$ sudo conntrack -E
  [UPDATE] tcp      6 120 TIME_WAIT src=10.0.2.10 dst=10.0.2.20 sport=57216 dport=8000 src=10.0.2.20 dst=10.0.2.10 sport=8000 dport=57216 [ASSURED]
 
 ```
+### Exercise 3: Why RELATED matters
+
+Server VM
+
+```
+# list firewall rules with line numbers
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy DROP 26 packets, 3234 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1     2569  188K ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+2       48  3508 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+3     1690  118K ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+
+# Delete the first firewall rule       
+user1@server:~$ sudo iptables -D INPUT 1
+
+# Show updated firewall rules
+user1@server:~$ sudo iptables -n -L -v
+Chain INPUT (policy DROP 26 packets, 3234 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   48  3508 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+ 1765  123K ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+# 
+user1@server:~$ sudo iptables -I INPUT 1 -m conntrack --ctstate ESTABLISHED -j ACCEPT 
+user1@server:~$ sudo iptables -L -v -n
+Chain INPUT (policy DROP 26 packets, 3234 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   51  3372 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+   48  3508 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+ 1959  136K ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination       
+```
