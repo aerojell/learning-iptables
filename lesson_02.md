@@ -307,3 +307,34 @@ table ip filter {
         }
 }
 ```
+
+Client VM
+
+```
+user1@client:~$ sudo time curl -m 10 http://10.0.2.10
+[sudo: authenticate] Password:                                            
+curl: (7) Failed to connect to 10.0.2.10 port 80 after 4 ms: Could not connect to server
+Command exited with non-zero status 7
+0.01user 0.03system 0:00.09elapsed 48%CPU (0avgtext+0avgdata 13156maxresident)k
+5480inputs+0outputs (11major+697minor)pagefaults 0swaps
+
+user1@client:~$ sudo nmap -sS -p22,80 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-17 15:18 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.0011s latency).
+
+PORT   STATE    SERVICE
+22/tcp open     ssh
+80/tcp filtered http
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 1.02 seconds
+```
+Server VM
+```
+user1@server:~$ sudo tcpdump -ni enp0s3 port 80
+[sudo: authenticate] Password:                                            
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+15:17:27.396899 IP 10.0.2.20.40688 > 10.0.2.10.80: Flags [S], seq 2770638832, win 64240, options [mss 1460,sackOK,TS val 4033555141 ecr 0,nop,wscale 8], length 0
+```
