@@ -338,3 +338,81 @@ tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
 listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 15:17:27.396899 IP 10.0.2.20.40688 > 10.0.2.10.80: Flags [S], seq 2770638832, win 64240, options [mss 1460,sackOK,TS val 4033555141 ecr 0,nop,wscale 8], length 0
 ```
+
+## Exercise 3: Default DENY policy
+
+### Prep: Clear existing firewall rules
+
+Server VM
+
+```
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 410 packets, 45738 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    2   104 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 reject-with icmp-port-unreachable
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+user1@server:~$ sudo iptables -F
+
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 527 packets, 53330 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+ 
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+        }
+}
+```
+
+### Step 1: Add ALLOW rules first
+
+Server VM
+
+```
+# Allow traffic from loopback interface (lo)
+user1@server:~$ sudo iptables -A INPUT -i lo -j ACCEPT
+
+# Allow SSH traffic
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Allow ping request
+user1@server:~$ sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 1032 packets, 94699 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+2      490 32536 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+3        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination  
+
+      
+user1@server:~$ sudo nft list ruleset
+# Warning: table ip filter is managed by iptables-nft, do not touch!
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                iifname "lo" counter packets 0 bytes 0 accept
+                tcp dport 22 counter packets 330 bytes 21708 accept
+                ip protocol icmp icmp type echo-request counter packets 0 bytes 0 accept
+        }
+}
+```
