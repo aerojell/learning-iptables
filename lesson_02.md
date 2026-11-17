@@ -442,6 +442,8 @@ Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
 num   pkts bytes target     prot opt in     out     source               destination
 ```
 
+### Step 3: Test from the client
+
 Client VM
 
 ```
@@ -523,4 +525,231 @@ Warning: Failed to fetch http://us.archive.ubuntu.com/ubuntu/dists/resolute-upda
 Warning: Failed to fetch http://us.archive.ubuntu.com/ubuntu/dists/resolute-backports/InRelease  Temporary failure resolving 'us.archive.ubuntu.com'
 Warning: Failed to fetch http://security.ubuntu.com/ubuntu/dists/resolute-security/InRelease  Temporary failure resolving 'security.ubuntu.com'
 Warning: Some index files failed to download. They have been ignored, or old ones used instead.
+```
+
+### Step 4: Reset firewall 
+
+Server VM
+```
+user1@server:~$ sudo iptables -P INPUT ACCEPT
+
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 1 packets, 44 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+  570 46659 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+ 3000  191K ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+    3   252 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+user1@server:~$ sudo iptables -F
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 48 packets, 3120 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination       
+
+```
+
+## Exercise 4: Rule order
+
+### Prep
+
+Server VM
+
+```
+# Check firewall rulesuser1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 337 packets, 34537 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+
+# Check nginx webserver status
+user1@server:~$ systemctl status nginx
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-11-17 15:13:21 UTC; 1h 10min ago
+ Invocation: 85c22e01c5444ff0b682b6d9420f58fc
+       Docs: man:nginx(8)
+    Process: 1245 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 1254 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 1257 (nginx)
+      Tasks: 3 (limit: 1888)
+     Memory: 4.5M (peak: 4.8M)
+        CPU: 42ms
+     CGroup: /system.slice/nginx.service
+             ├─1257 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             ├─1258 "nginx: worker process"
+             └─1259 "nginx: worker process"
+
+Nov 17 15:13:21 server systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+Nov 17 15:13:21 server systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+
+```
+
+### Step 1: DROP above ACCEPT
+
+Server VM
+
+```
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+[sudo: authenticate] Password:
+       
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 1127 packets, 102K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination   
+
+```
+
+Client VM
+
+```
+user1@client:~$ curl -m 5 -I http://10.0.2.10
+curl: (28) Connection timed out after 5003 milliseconds
+```
+
+Server VM
+- Checking the packet stats
+
+```
+user1@server:~$ sudo iptables -L INPUT -v -n --line-numbers
+[sudo: authenticate] Password:                                            
+Chain INPUT (policy ACCEPT 1596 packets, 140K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1       10   600 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+```
+
+### Step 2: Insert the ACCEPT above the DROP
+
+Server VM
+
+```
+# -I insert rule at the given line number (1 - in this case)
+user1@server:~$ sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
+
+# confirm
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 1877 packets, 159K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2       10   600 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+3        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination     
+```
+
+Client VM
+- Run curl again
+
+```
+user1@client:~$ curl -m 5 -I http://10.0.2.10
+HTTP/1.1 200 OK
+Server: nginx/1.28.3 (Ubuntu)
+Date: Tue, 17 Nov 2026 17:03:00 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
+Connection: keep-alive
+ETag: "6af2342c-267"
+Accept-Ranges: bytes
+```
+
+Server VM
+- check packet stats
+
+```
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 1922 packets, 163K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        6   394 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2       10   600 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+3        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination     
+```
+
+### Step 3: Delete by line number
+
+Server VM
+
+```
+# first list all the firewall rules with numbers
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 2109 packets, 177K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        6   394 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2       10   600 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+3        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+
+# delete line #2    
+user1@server:~$ sudo iptables -D INPUT 2
+
+# list firewall rules again
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 2274 packets, 188K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        6   394 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination     
+```
+
+### Step 4: Clean-up firewall rules
+
+Server VM
+
+```
+# flush all firewall rules
+user1@server:~$ sudo iptables -F
+
+# show iptable 
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy ACCEPT 2570 packets, 208K bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination  
 ```
