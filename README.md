@@ -17,6 +17,11 @@ Here are the Claude prompts I started with:
 
 ## Sections
   - [Virtual Box Setup](virtualbox-setup.md)
-  - [Lesson 1](lesson_01.md)
-  - [Lesson 2](lesson_02.md)
+  - [Lesson 1 - Mental model and observation](lesson_01.md)
+  - [Lesson 2 - Basic allow and deny rules](lesson_02.md)
+  - [Lesson 3 - Stateful filtering](lesson_03.md)
+  - Lesson 4 - Modern tooling with nftable
+  - Lesson 5 - NAT and routing
+  - Lesson 6 - Logging, debugging, and troubleshooting
+  - Capstone - Capstone project
 
