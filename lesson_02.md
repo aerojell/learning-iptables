@@ -56,6 +56,7 @@ Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
 Server VM
 
 ```
+# Set iptables to DROP port 80 traffic 
 user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j DROP
 
 ```
@@ -135,7 +136,9 @@ table ip filter {
 
 Server VM
 
+
 ```
+# Set iptables to REJECT port 80 traffic with TCP reset
 user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j REJECT --reject-with tcp-reset
 
 user1@server:~$ sudo iptables -L -v -n
@@ -202,8 +205,10 @@ listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 Server VM
 
 ```
+# Flush iptables
 user1@server:~$ sudo iptables -F
 
+# Confirm thee's nothing there using iptables and nft
 user1@server:~$ sudo nft list ruleset
 table ip filter {
         chain INPUT {
@@ -221,6 +226,7 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination
 
+# Set iptables to DROP port 80 traffic
 user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j DROP
 
 ```
@@ -251,4 +257,53 @@ listening on enp0s3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 19:36:12.260548 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836457050 ecr 0,nop,wscale 8], length 0
 19:36:15.908263 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836460697 ecr 0,nop,wscale 8], length 0
 19:36:22.155775 IP 10.0.2.20.60012 > 10.0.2.10.80: Flags [S], seq 2485536836, win 64240, options [mss 1460,sackOK,TS val 2836466945 ecr 0,nop,wscale 8], length 0
+```
+
+### Part D: Plain REJECT
+
+```
+# Flush existing iptables
+user1@server:~$ sudo iptables -F
+
+# Confirm there's no iptables 
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 3702 packets, 2777K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+user1@server:~$ sudo nft list ruleset
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+        }
+}
+
+# Set iptables to "plain" REJECT port 80 traffic
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -j REJECT
+
+# Verify iptable rules
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 4147 packets, 2814K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 reject-with icmp-port-unreachable
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+user1@server:~$ sudo nft list ruleset
+# Warning: table ip filter is managed by iptables-nft, do not touch!
+table ip filter {
+        chain INPUT {
+                type filter hook input priority filter; policy accept;
+                tcp dport 80 counter packets 0 bytes 0 reject
+        }
+}
 ```
