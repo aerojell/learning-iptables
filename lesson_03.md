@@ -237,7 +237,8 @@ Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination
 
 # 
-user1@server:~$ sudo iptables -I INPUT 1 -m conntrack --ctstate ESTABLISHED -j ACCEPT 
+user1@server:~$ sudo iptables -I INPUT 1 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+
 user1@server:~$ sudo iptables -L -v -n
 Chain INPUT (policy DROP 26 packets, 3234 bytes)
  pkts bytes target     prot opt in     out     source               destination         
@@ -249,5 +250,85 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination         
 
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination       
+ pkts bytes target     prot opt in     out     source               destination
+
+# test if not having RELATED matters
+user1@server:~$ sudo nmap -sU -p 5555 10.0.2.10
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-18 16:04 +0000
+Nmap scan report for server.local (10.0.2.10)
+Host is up (0.000054s latency).
+
+PORT     STATE  SERVICE
+5555/udp closed rplay
+
+Nmap done: 1 IP address (1 host up) scanned in 0.21 seconds
+
+# packts were dropped but the state from nmap came back as "closed" instead of "open | filtered"
+
+# to test that the packets are classified as RELATED, added new iptables rules
+user1@server:~$ sudo iptables -I INPUT 1 -p icmp -m conntrack --ctstate RELATED
+
+user1@server:~$ sudo iptables -I INPUT 1 -p icmp -m conntrack --ctstate ESTABLISHED
+
+user1@server:~$ sudo iptables -Z
+
+user1@server:~$ sudo nmap -sU -p 5555 10.0.2.20
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-18 16:13 +0000
+Nmap scan report for 10.0.2.20
+Host is up (0.0012s latency).
+
+PORT     STATE  SERVICE
+5555/udp closed rplay
+MAC Address: 08:00:27:29:D6:FE (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 6.17 seconds
+user1@server:~$ sudo iptables -L INPUT -n -v --line-numbers
+Chain INPUT (policy DROP 1 packets, 56 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+2        1    56            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+3      376 24952 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+4        1    68 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+5        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+```
+
+A more reliable test for RELATED
+
+```
+user1@server:~$ sudo iptables -I INPUT 1 -p icmp -m conntrack --ctstate RELATED
+
+user1@server:~$ sudo iptables -Z
+
+user1@server:~$ sudo iptables -L INPUT -n -v --line-numbers
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+2        8   476 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+4        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+5        0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+6        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+7        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+user1@server:~$ nc -uvz -w 3 10.0.2.20 5555
+
+user1@server:~$ sudo iptables -L INPUT -n -v --line-numbers
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1        2   114            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+2      142  9266 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+4        0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+5        0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+6        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+7        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+# nc (netstat) packets were classified as RELATED (line 1)
+
+# PCAPS also confirmed it
+21:28:11.150935 IP 10.0.2.10.50682 > 10.0.2.20.5555: UDP, length 1
+21:28:11.151055 IP 10.0.2.10.50682 > 10.0.2.20.5555: UDP, length 1
+21:28:11.152073 IP 10.0.2.20 > 10.0.2.10: ICMP 10.0.2.20 udp port 5555 unreachable, length 37
+21:28:11.152073 IP 10.0.2.20 > 10.0.2.10: ICMP 10.0.2.20 udp port 5555 unreachable, length 37
+
 ```
