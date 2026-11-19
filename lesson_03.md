@@ -337,6 +337,8 @@ num   pkts bytes target     prot opt in     out     source               destina
 
 #### Step 1: Clean up
 
+Server VM
+
 ```
 # Set default INPUT policy as ACCEPT
 user1@server:~$ sudo iptables -P INPUT ACCEPT
@@ -373,8 +375,24 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination    
 ```
+Client VM
+
+```
+# confirm http service is still running on port 8000
+user1@client:~$ ss -tlnp
+State      Recv-Q     Send-Q         Local Address:Port         Peer Address:Port    Process                                
+LISTEN     0          4096           127.0.0.53%lo:53                0.0.0.0:*                                              
+LISTEN     0          511                  0.0.0.0:80                0.0.0.0:*                                              
+LISTEN     0          4096                 0.0.0.0:22                0.0.0.0:*                                              
+LISTEN     0          4096              127.0.0.54:53                0.0.0.0:*                                              
+LISTEN     0          5                    0.0.0.0:8000              0.0.0.0:*        users:(("python3",pid=1510,fd=3))     
+LISTEN     0          511                     [::]:80                   [::]:*                                              
+LISTEN     0          4096                    [::]:22                   [::]:*    
+```
 
 #### Step 2: Add rules first, then policy last
+
+Server VM
 
 ```
 user1@server:~$ sudo iptables -A INPUT -i lo -j ACCEPT
@@ -398,8 +416,10 @@ Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination         
 
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
- pkts bytes target     prot opt in     out     source               destination         
+ pkts bytes target     prot opt in     out     source               destination
+        
 user1@server:~$ sudo iptables -P INPUT DROP
+
 user1@server:~$ sudo iptables -L -n -v --line-numbers
 Chain INPUT (policy DROP 0 packets, 0 bytes)
 num   pkts bytes target     prot opt in     out     source               destination         
@@ -415,4 +435,86 @@ num   pkts bytes target     prot opt in     out     source               destina
 
 Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
 num   pkts bytes target     prot opt in     out     source               destination      
+```
+#### Step 3: Test inbound traffic (from the client VM)
+
+Client VM
+
+```
+user1@client:~$ sudo nmap -sS -p 22,80,45678 10.0.2.10
+[sudo: authenticate] Password:                                            
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-11-18 22:59 +0000
+Nmap scan report for 10.0.2.10
+Host is up (0.010s latency).
+
+PORT      STATE    SERVICE
+22/tcp    open     ssh
+80/tcp    open     http
+45678/tcp filtered eba
+MAC Address: 08:00:27:3F:30:9E (Oracle VirtualBox virtual NIC)
+
+Nmap done: 1 IP address (1 host up) scanned in 7.10 seconds
+
+# test ping
+user1@client:~$ ping -c 3 10.0.2.10
+PING 10.0.2.10 (10.0.2.10) 56(84) bytes of data.
+64 bytes from 10.0.2.10: icmp_seq=1 ttl=64 time=4.45 ms
+64 bytes from 10.0.2.10: icmp_seq=2 ttl=64 time=2.57 ms
+64 bytes from 10.0.2.10: icmp_seq=3 ttl=64 time=2.53 ms
+
+--- 10.0.2.10 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2045ms
+rtt min/avg/max/mdev = 2.531/3.182/4.446/0.893 ms
+
+# test port 80
+user1@client:~$ curl -m 5 -I http://10.0.2.10
+HTTP/1.1 200 OK
+Server: nginx/1.28.3 (Ubuntu)
+Date: Wed, 18 Nov 2026 23:00:08 GMT
+Content-Type: text/html
+Content-Length: 615
+Last-Modified: Mon, 09 Nov 2026 20:59:24 GMT
+Connection: keep-alive
+ETag: "6af2342c-267"
+Accept-Ranges: bytes
+```
+
+#### Step 4: Test outbound traffic (leaving the server VM)
+
+```
+user1@server:~$ curl -m 5 -I http://10.0.2.20:8000
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.14.4
+Date: Wed, 18 Nov 2026 23:03:45 GMT
+Content-type: text/html; charset=utf-8
+Content-Length: 551
+
+user1@server:~$ ping -c 2 10.0.2.20
+PING 10.0.2.20 (10.0.2.20) 56(84) bytes of data.
+64 bytes from 10.0.2.20: icmp_seq=1 ttl=64 time=4.89 ms
+64 bytes from 10.0.2.20: icmp_seq=2 ttl=64 time=9.75 ms
+
+--- 10.0.2.20 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1087ms
+rtt min/avg/max/mdev = 4.889/7.319/9.749/2.430 ms
+```
+
+#### Step 5: Read the counters
+
+```
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy DROP 2 packets, 88 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1       96  7088 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+2     1280 87209 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        1    52 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+4        1    44 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW
+5        2   104 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 ctstate NEW
+6        1    84 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination   
 ```
