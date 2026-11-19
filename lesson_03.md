@@ -332,3 +332,87 @@ num   pkts bytes target     prot opt in     out     source               destina
 21:28:11.152073 IP 10.0.2.20 > 10.0.2.10: ICMP 10.0.2.20 udp port 5555 unreachable, length 37
 
 ```
+
+### Exercise 4: A complete stateful ruleset
+
+#### Step 1: Clean up
+
+```
+# Set default INPUT policy as ACCEPT
+user1@server:~$ sudo iptables -P INPUT ACCEPT
+
+# List iptables to show ACCEPT
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    4   228            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+ 1080 78234 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+    0     0            icmp --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate ESTABLISHED
+   48  3576 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+    1    52 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+# Flush the iptable
+user1@server:~$ sudo iptables -F
+
+# Show empty iptable
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 8 packets, 476 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination    
+```
+
+#### Step 2: Add rules first, then policy last
+
+```
+user1@server:~$ sudo iptables -A INPUT -i lo -j ACCEPT
+user1@server:~$ sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+user1@server:~$ sudo iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -j ACCEPT
+user1@server:~$ sudo iptables -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW -j ACCEPT
+user1@server:~$ sudo iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+user1@server:~$ sudo iptables -L -n -v
+Chain INPUT (policy ACCEPT 487 packets, 33196 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   80  5968 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+  767 51704 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+    0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW
+    0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 ctstate NEW
+    0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+user1@server:~$ sudo iptables -P INPUT DROP
+user1@server:~$ sudo iptables -L -n -v --line-numbers
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+1       80  5968 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0           
+2      893 59956 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+3        0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+4        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW
+5        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 ctstate NEW
+6        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0            icmptype 8
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+num   pkts bytes target     prot opt in     out     source               destination      
+```
