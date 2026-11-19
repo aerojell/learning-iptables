@@ -11,6 +11,10 @@ Here are the Claude prompts I started with:
   
   >my host OS is windows 11.  can you provide instructions on how i setup virtual box?
 
+## Reference Guide
+
+Here's the [reference guide](firewall-reference-lab.md) that Claude came up it.  It's a living document and will be updated as I go through the lesson plan.
+
 ## Software
 - [VirtualBox](https://www.virtualbox.org/)
 - [Tabby](https://tabby.sh/) - Open source cross platform terminal client (SSH, Powershell, etc)
