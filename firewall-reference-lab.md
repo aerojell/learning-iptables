@@ -1,4 +1,4 @@
-% Hands-On Firewall Lab: iptables Reference
+# Hands-On Firewall Lab: iptables Reference
 
 **Lessons 1 to 3, with corrected exercises, answer key, and command reference**
 
