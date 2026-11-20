@@ -11,9 +11,9 @@ Here are the Claude prompts I started with:
   
   >my host OS is windows 11.  can you provide instructions on how i setup virtual box?
 
-## Reference Guide
+## Claude's Hands-On Lesson Plan
 
-Here's the [reference guide](firewall-reference-lab.md) that Claude came up it.  It's a living document and will be updated as I go through the lesson plan.
+Here's the [hands-on lesson plan](firewall-reference-lab.md) from Claude.  It's a living document and will be updated as I go through it. I've documented the lessons and exercises I've completed below.
 
 ## Software
 - [VirtualBox](https://www.virtualbox.org/)
